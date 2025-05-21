@@ -1,5 +1,4 @@
-import {mobileCheck, q, color2Hex, clearThree} from './helpers.js'
-// const DEBUGMODE = window.location.toString().indexOf('VANTADEBUG') !== -1
+import { q, color2Hex, clearThree} from './helpers.js'
 
 const win = typeof window == 'object'
 let THREE = (win && window.THREE) || {}
@@ -8,31 +7,8 @@ const VANTA = (win && window.VANTA) || {}
 VANTA.register = (name, Effect) => {
   return VANTA[name] = (opts) => new Effect(opts)
 }
-VANTA.version = '0.5.24'
-
 export {VANTA}
 
-// const ORBITCONTROLS = {
-//   enableZoom: false,
-//   userPanSpeed: 3,
-//   userRotateSpeed: 2.0,
-//   maxPolarAngle: Math.PI * 0.8, // (pi/2 is pure horizontal)
-//   mouseButtons: {
-//     ORBIT: THREE.MOUSE.LEFT,
-//     ZOOM: null,
-//     PAN: null
-//   }
-// }
-// if (DEBUGMODE) {
-//   Object.assign(ORBITCONTROLS, {
-//     enableZoom: true,
-//     zoomSpeed: 4,
-//     minDistance: 100,
-//     maxDistance: 4500
-//   })
-// }
-
-// Namespace for errors
 const error = function() {
   Array.prototype.unshift.call(arguments, '[VANTA]')
   return console.error.apply(this, arguments)
@@ -42,9 +18,6 @@ VANTA.VantaBase = class VantaBase {
   constructor(userOptions = {}) {
     if (!win) return false
     VANTA.current = this
-    this.windowMouseMoveWrapper = this.windowMouseMoveWrapper.bind(this)
-    this.windowTouchWrapper = this.windowTouchWrapper.bind(this)
-    this.windowGyroWrapper = this.windowGyroWrapper.bind(this)
     this.resize = this.resize.bind(this)
     this.animationLoop = this.animationLoop.bind(this)
     this.restart = this.restart.bind(this)
@@ -89,7 +62,6 @@ VANTA.VantaBase = class VantaBase {
     try {
       this.init()
     } catch (e) {
-      // FALLBACK - just use color
       error('Init error', e)
       if (this.renderer && this.renderer.domElement) {
         this.el.removeChild(this.renderer.domElement)
@@ -101,38 +73,20 @@ VANTA.VantaBase = class VantaBase {
       return
     }
 
-    // After init
-    this.initMouse() // Triggers mouse, which needs to be called after init
     this.resize()
     this.animationLoop()
 
-    // Event listeners
     const ad = window.addEventListener
     ad('resize', this.resize)
     window.requestAnimationFrame(this.resize) // Force a resize after the first frame
-
-    // Add event listeners on window, because this element may be below other elements, which would block the element's own mousemove event
-    if (this.options.mouseControls) {
-      ad('scroll', this.windowMouseMoveWrapper)
-      ad('mousemove', this.windowMouseMoveWrapper)
-    }
-    if (this.options.touchControls) {
-      ad('touchstart', this.windowTouchWrapper)
-      ad('touchmove', this.windowTouchWrapper)
-    }
-    if (this.options.gyroControls) {
-      ad('deviceorientation', this.windowGyroWrapper)
-    }
   }
 
   setOptions(userOptions={}){
     Object.assign(this.options, userOptions)
-    this.triggerMouseMove()
   }
 
   prepareEl() {
     let i, child
-    // wrapInner for text nodes, so text nodes can be put into foreground
     if (typeof Node !== 'undefined' && Node.TEXT_NODE) {
       for (i = 0; i < this.el.childNodes.length; i++) {
         const n = this.el.childNodes[i]
@@ -144,7 +98,6 @@ VANTA.VantaBase = class VantaBase {
         }
       }
     }
-    // Set foreground elements
     for (i = 0; i < this.el.children.length; i++) {
       child = this.el.children[i]
       if (getComputedStyle(child).position === 'static') {
@@ -154,7 +107,6 @@ VANTA.VantaBase = class VantaBase {
         child.style.zIndex = 1
       }
     }
-    // Set canvas and container style
     if (getComputedStyle(this.el).position === 'static') {
       this.el.style.position = 'relative'
     }
@@ -180,7 +132,6 @@ VANTA.VantaBase = class VantaBase {
       console.warn("[VANTA] No THREE defined on window")
       return
     }
-    // Set renderer
     this.renderer = new THREE.WebGLRenderer({
       alpha: true,
       antialias: true
@@ -209,79 +160,13 @@ VANTA.VantaBase = class VantaBase {
     return canvas.getBoundingClientRect()
   }
 
-  windowMouseMoveWrapper(e){
-    const rect = this.getCanvasRect()
-    if (!rect) return false
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    if (x>=0 && y>=0 && x<=rect.width && y<=rect.height) {
-      this.mouseX = x
-      this.mouseY = y
-      if (!this.options.mouseEase) this.triggerMouseMove(x, y)
-    }
-  }
-  windowTouchWrapper(e){
-    const rect = this.getCanvasRect()
-    if (!rect) return false
-    if (e.touches.length === 1) {
-      const x = e.touches[0].clientX - rect.left
-      const y = e.touches[0].clientY - rect.top
-      if (x>=0 && y>=0 && x<=rect.width && y<=rect.height) {
-        this.mouseX = x
-        this.mouseY = y
-        if (!this.options.mouseEase) this.triggerMouseMove(x, y)
-      }
-    }
-  }
-  windowGyroWrapper(e){
-    const rect = this.getCanvasRect()
-    if (!rect) return false
-    const x = Math.round(e.alpha * 2) - rect.left
-    const y = Math.round(e.beta * 2) - rect.top
-    if (x>=0 && y>=0 && x<=rect.width && y<=rect.height) {
-      this.mouseX = x
-      this.mouseY = y
-      if (!this.options.mouseEase) this.triggerMouseMove(x, y)
-    }
-  }
-
-  triggerMouseMove(x, y) {
-    if (x === undefined && y === undefined) { // trigger at current position
-      if (this.options.mouseEase) {
-        x = this.mouseEaseX
-        y = this.mouseEaseY
-      } else {
-        x = this.mouseX
-        y = this.mouseY
-      }
-    }
-    if (this.uniforms) {
-      this.uniforms.iMouse.value.x = x / this.scale // pixel values
-      this.uniforms.iMouse.value.y = y / this.scale // pixel values
-    }
-    const xNorm = x / this.width // 0 to 1
-    const yNorm = y / this.height // 0 to 1
-    typeof this.onMouseMove === "function" ? this.onMouseMove(xNorm, yNorm) : void 0
-  }
-
   setSize() {
     this.scale || (this.scale = 1)
-    if (mobileCheck() && this.options.scaleMobile) {
-      this.scale = this.options.scaleMobile
-    } else if (this.options.scale) {
+    if (this.options.scale) {
       this.scale = this.options.scale
     }
     this.width = Math.max(this.el.offsetWidth, this.options.minWidth)
     this.height = Math.max(this.el.offsetHeight, this.options.minHeight)
-  }
-  initMouse() {
-    // Init mouseX and mouseY
-    if ((!this.mouseX && !this.mouseY) ||
-      (this.mouseX === this.options.minWidth/2 && this.mouseY === this.options.minHeight/2)) {
-      this.mouseX = this.width/2
-      this.mouseY = this.height/2
-      this.triggerMouseMove(this.mouseX, this.mouseY)
-    }
   }
 
   resize() {
@@ -311,14 +196,11 @@ VANTA.VantaBase = class VantaBase {
     return minScrollTop <= scrollTop && scrollTop <= maxScrollTop
   }
 
-  animationLoop() {
-    // Step time
+  animationLoop(t) {
     this.t || (this.t = 0)
-    // Uniform time
     this.t2 || (this.t2 = 0)
 
-    // Normalize animation speed to 60fps
-    const now = performance.now()
+    const now = t
     if (this.prevNow) {
       let elapsedTime = (now-this.prevNow) / (1000/60)
       elapsedTime = Math.max(0.2, Math.min(elapsedTime, 5))
@@ -342,7 +224,6 @@ VANTA.VantaBase = class VantaBase {
       }
     }
 
-    // Only animate if element is within view
     if (this.isOnScreen() || this.options.forceAnimate) {
       if (typeof this.onUpdate === "function") {
         this.onUpdate()
@@ -351,24 +232,12 @@ VANTA.VantaBase = class VantaBase {
         this.renderer.render(this.scene, this.camera)
         this.renderer.setClearColor(this.options.backgroundColor, this.options.backgroundAlpha)
       }
-      // if (this.stats) this.stats.update()
-      // if (this.renderStats) this.renderStats.update(this.renderer)
       if (this.fps && this.fps.update) this.fps.update()
       if (typeof this.afterRender === "function") this.afterRender()
     }
-    return this.req = window.requestAnimationFrame(this.animationLoop)
   }
 
-  // setupControls() {
-  //   if (DEBUGMODE && THREE.OrbitControls) {
-  //     this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement)
-  //     Object.assign(this.controls, ORBITCONTROLS)
-  //     return this.scene.add(new THREE.AxisHelper(100))
-  //   }
-  // }
-
   restart() {
-    // Restart the effect without destroying the renderer
     if (this.scene) {
       while (this.scene.children.length) {
         this.scene.remove(this.scene.children[0])
@@ -384,7 +253,6 @@ VANTA.VantaBase = class VantaBase {
     if (typeof this.onInit === "function") {
       this.onInit()
     }
-    // this.setupControls()
   }
 
   destroy() {
@@ -392,11 +260,6 @@ VANTA.VantaBase = class VantaBase {
       this.onDestroy()
     }
     const rm = window.removeEventListener
-    rm('touchstart', this.windowTouchWrapper)
-    rm('touchmove', this.windowTouchWrapper)
-    rm('scroll', this.windowMouseMoveWrapper)
-    rm('mousemove', this.windowMouseMoveWrapper)
-    rm('deviceorientation', this.windowGyroWrapper)
     rm('resize', this.resize)
     window.cancelAnimationFrame(this.req)
 

@@ -23,30 +23,6 @@ class Effect extends VantaBase {
     super(userOptions)
   }
 
-  // onInit() {
-  //   this.geometry = new THREE.BoxGeometry( 10, 10, 10 );
-  //   this.material = new THREE.MeshLambertMaterial({
-  //     color: this.options.color,
-  //     emissive: this.options.color,
-  //     emissiveIntensity: 0.75
-  //   });
-  //   this.cube = new THREE.Mesh( this.geometry, this.material );
-  //   this.scene.add(this.cube);
-
-  //   const c = this.camera = new THREE.PerspectiveCamera( 75, this.width/this.height, 0.1, 1000 );
-  //   c.position.z = 30;
-  //   c.lookAt(0,0,0);
-  //   this.scene.add(c);
-
-  //   const light = new THREE.HemisphereLight( 0xffffff, this.options.backgroundColor , 1 );
-  //   this.scene.add(light);
-  // }
-
-  // onUpdate() {
-  //   this.cube.rotation.x += 0.01;
-  //   this.cube.rotation.y += 0.01;
-  // }
-
   genPoint(x, y, z) {
     let sphere
     if (!this.points) { this.points = [] }
@@ -94,14 +70,8 @@ class Effect extends VantaBase {
     const material = new THREE.LineBasicMaterial({
       vertexColors: THREE.VertexColors,
       blending: this.blending === 'additive' ? THREE.AdditiveBlending : null,
-      // blending: THREE.SubtractiveBlending
       transparent: true
     });
-      // blending: THREE.CustomBlending
-      // blendEquation: THREE.SubtractEquation
-      // blendSrc: THREE.SrcAlphaFactor
-      // blendDst: THREE.OneMinusSrcAlphaFactor
-
     this.linesMesh = new THREE.LineSegments( geometry, material )
     this.cont.add( this.linesMesh )
 
@@ -110,39 +80,16 @@ class Effect extends VantaBase {
         const y = 0
         const x = ((i - (n/2)) * spacing)
         let z = ((j - (n/2)) * spacing)
-        // if (i % 2) { z += spacing * 0.5 } // offset
-
-        // nexusX = Math.round(x / 20) * 20
-        // nexusZ = Math.round(z / 20) * 20
-        // x += (nexusX - x) * 0.01
-        // z += (nexusZ - z) * 0.01
         this.genPoint(x, y, z)
-        // this.genPoint(x + ri(-5,5), y, z + ri(-5,5))
       }
     }
 
-    //  # radius
-    //   width, # width
-    //   rn(0,1000), # startAng
-    //   rn(1,6), # ang
-    //   rn(0, 50/(radius+1) + 5) + 5/width/(radius+0.5), # y
-    //   Math.max(-rn(0.5,2), rn(1, 50-radius/2) - radius/2) * 0.25 # speed
-    // )
-
-    // PerspectiveCamera( fov, aspect, near, far )
     this.camera = new THREE.PerspectiveCamera(
       20,
       this.width / this.height,
       0.01, 10000);
     this.camera.position.set(50, 100, 150)
     this.scene.add( this.camera )
-
-    // ambience = new THREE.AmbientLight(0xffffff, 0.01)
-    // @scene.add(ambience)
-
-    // @pointLight = new THREE.PointLight(0xFFFFFF, 0.01)
-    // @pointLight.position.set(0, 150, 200)
-    // @scene.add( @pointLight )
 
     const ambience = new THREE.AmbientLight(0xffffff, 0.75)
     this.scene.add(ambience)
@@ -154,7 +101,6 @@ class Effect extends VantaBase {
     this.scene.add(this.spot)
 
 
-    // LINES BALL
     this.cont2 = new THREE.Group()
     this.cont2.position.set(0, 15, 0)
     this.scene.add(this.cont2)
@@ -164,7 +110,6 @@ class Effect extends VantaBase {
     for (let i = 0; i < 80; i ++) {
       const f1 = rn(18,24)
       const f2 = f1 + rn(1,6)
-      // https://math.stackexchange.com/questions/1585975/how-to-generate-random-points-on-a-sphere
       const z = rn(-1,1)
       const r = Math.sqrt(1 - z*z)
       const theta = rn(0, Math.PI * 2)
@@ -178,7 +123,6 @@ class Effect extends VantaBase {
     this.linesMesh2.position.set(0, 0, 0)
     this.cont2.add(this.linesMesh2)
 
-    // Poles
     const material3 = new THREE.LineBasicMaterial( {
       color: this.options.color2,
       linewidth: 2,
@@ -202,9 +146,6 @@ class Effect extends VantaBase {
     this.linesMesh3.position.set(0, 0, 0)
     this.cont2.add(this.linesMesh3)
 
-
-    // GLOBE
-    // https://stackoverflow.com/questions/20153705/three-js-wireframe-material-all-polygons-vs-just-edges
     const wireMat = new THREE.LineBasicMaterial({ color: this.options.color })
     const sphereGeom = new THREE.SphereGeometry( 18*this.options.size, 18, 14 )
     const edges = new THREE.EdgesGeometry(sphereGeom)
@@ -240,8 +181,6 @@ class Effect extends VantaBase {
     } else if (win && window.innerWidth < 720) {
       c.lookAt( new THREE.Vector3( -20, 0, 0 ) )
     } else c.lookAt( new THREE.Vector3( -40, 0, 0 ) )
-    // c.near = 0.01
-    // c.updateProjectionMatrix()
 
     let vertexpos = 0
     let colorpos = 0
@@ -266,24 +205,9 @@ class Effect extends VantaBase {
       this.linesMesh3.rotation.y -= 0.004
     }
 
-    // # TEMPORARY RAY DRAWING
-    // pointA = @camera.position
-    // direction = @rayCaster.ray.direction
-    // direction.normalize()
-    // distance = 1000000 # at what distance to determine pointB
-    // pointB = new THREE.Vector3()
-    // pointB.addVectors( pointA, direction.multiplyScalar( distance ) )
-    // geometry = new THREE.Geometry()
-    // geometry.vertices.push( pointA )
-    // geometry.vertices.push( pointB )
-    // material = new THREE.LineBasicMaterial( { color : 0xffffff } )
-    // line = new THREE.Line( geometry, material )
-    // @scene.add( line )
-
     for (let i = 0; i < this.points.length; i++) {
       let dist, distToMouse
       const p = this.points[i]
-      // p.position.y += Math.sin(@t * 0.005 - 0.02 * p.ox + 0.015 * p.oz) * 0.02
 
       if (this.rayCaster) {
         distToMouse = this.rayCaster.ray.distanceToPoint(p.position)
@@ -294,21 +218,10 @@ class Effect extends VantaBase {
       p.scale.z = ((15 - distClamp) * 0.25).clamp(1, 100)
       p.scale.x = p.scale.y = p.scale.z
 
-      // if (p.r !== 0) {
-      //   let ang = Math.atan2( p.position.z, p.position.x )
-      //   dist = Math.sqrt( (p.position.z * p.position.z) + (p.position.x * p.position.x) )
-      //   // ang += 0.0005 * p.r
-      //   p.position.x = dist * Math.cos(ang)
-      //   p.position.z = dist * Math.sin(ang)
-      // }
-
       p.position.y = 2 * Math.sin(
         p.position.x/10 + this.t*0.01
         + p.position.z/10 * 0.5
       )
-
-        // p.position.x += Math.sin(@t * 0.01 + p.position.y) * 0.02
-        // p.position.z += Math.sin(@t * 0.01 - p.position.y) * 0.02
 
       for (let j = i; j < this.points.length; j++) {
         const p2 = this.points[j]
@@ -325,8 +238,6 @@ class Effect extends VantaBase {
           } else {
             lineColor = bgColor.clone().lerp(color, alpha)
           }
-          // if @blending == 'subtractive'
-          //   lineColor = new THREE.Color(0x000000).lerp(diffColor, alpha)
 
           this.linePositions[ vertexpos++ ] = p.position.x
           this.linePositions[ vertexpos++ ] = p.position.y
@@ -349,44 +260,13 @@ class Effect extends VantaBase {
     this.linesMesh.geometry.setDrawRange( 0, numConnected * 2 )
     this.linesMesh.geometry.attributes.position.needsUpdate = true
     this.linesMesh.geometry.attributes.color.needsUpdate = true
-    // @pointCloud.geometry.attributes.position.needsUpdate = true
-
-    // Update other colors
     this.sphere.material.color.set(color)
     this.linesMesh2.material.color.set(color2)
     this.linesMesh3.material.color.set(color2)
 
     return this.t * 0.001
   }
-    // @cont.rotation.x += Math.sin(t) * 0.0001
-    // @cont.rotation.z += Math.cos(t) * 0.00007
 
-
-  onMouseMove(x,y) {
-    const c = this.camera
-    if (!c.oy) {
-      c.oy = c.position.y
-      c.ox = c.position.x
-      c.oz = c.position.z
-    }
-    const ang = Math.atan2(c.oz, c.ox)
-    const dist = Math.sqrt((c.oz*c.oz) + (c.ox*c.ox))
-    const tAng = ang + ((x-0.5) * 1.5 * (this.options.mouseCoeffX || 1))
-    c.tz = dist * Math.sin(tAng)
-    c.tx = dist * Math.cos(tAng)
-    c.ty = c.oy + ((y-0.5) * 80 * (this.options.mouseCoeffY || 1))
-
-    if (!this.rayCaster) {
-      // this.rayCaster = new THREE.Raycaster()
-    }
-    this.rcMouseX = (x * 2) - 1
-    this.rcMouseY = (- x * 2) + 1
-  }
-
-  onRestart() {
-    this.scene.remove( this.linesMesh )
-    this.points = []
-  }
 }
 Effect.initClass()
 export default VANTA.register('GLOBE', Effect)
