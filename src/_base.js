@@ -199,49 +199,49 @@ VANTA.VantaBase = class VantaBase {
   }
 
   animationLoop(t) {
-    // Initialize time tracking if needed
-    this.t || (this.t = 0);
-    this.t2 || (this.t2 = 0);
-
-    // For Remotion: Use the passed time directly (t is in seconds)
-    const now = t * 1000; // Convert to milliseconds to match original logic
-
+    // === Time tracking (unchanged) ===
+    this.t ||= 0
+    this.t2 ||= 0
+    const now = t * 1000
     if (this.prevNow) {
-      // Calculate elapsed time with frame-rate independence
-      let elapsedTime = (now - this.prevNow) / (1000 / 60);
-      elapsedTime = Math.max(0.2, Math.min(elapsedTime, 5));
-      this.t += elapsedTime;
-
-      // Update shader time (convert to seconds)
-      this.t2 += (this.options.speed || 1) * elapsedTime;
+      let elapsedTime = (now - this.prevNow) / (1000 / 60)
+      elapsedTime = Math.max(0.2, Math.min(elapsedTime, 5))
+      this.t += elapsedTime
+      this.t2 += (this.options.speed || 1) * elapsedTime
       if (this.uniforms) {
-        this.uniforms.iTime.value = this.t2 * 0.016667; // iTime is in seconds
+        this.uniforms.iTime.value = this.t2 * 0.016667
       }
     }
-    this.prevNow = now;
+    this.prevNow = now
 
-    // Always render in Remotion (skip isOnScreen check)
+    // === Always render ===
     if (this.scene && this.camera) {
-      // Clear only what we need (color and depth buffers)
-      this.renderer.clearColor();
-      this.renderer.clearDepth();
+      // 🔥 1. Disable autoClear to ensure full control
+      this.renderer.autoClear = false
 
-      // Update scene
+      // 🔥 2. Explicitly clear color, depth, and stencil buffers
+      this.renderer.clear(true, true, true)
+
+      // 🔥 3. Update scene
       if (typeof this.onUpdate === "function") {
-        this.onUpdate();
+        this.onUpdate()
       }
 
-      // Render frame
-      this.renderer.render(this.scene, this.camera);
+      // 🔥 4. Render scene
+      this.renderer.render(this.scene, this.camera)
 
-      // Set clear color for next frame
-      this.renderer.setClearColor(this.options.backgroundColor, this.options.backgroundAlpha);
+      // 🔥 5. Flush GPU pipeline to avoid flickering in Remotion
+      this.renderer.getContext().finish()
+
+      // 🔥 6. OPTIONAL: restore clear color if used elsewhere
+      this.renderer.setClearColor(this.options.backgroundColor, this.options.backgroundAlpha)
     }
 
-    // Optional callbacks
-    if (this.fps && this.fps.update) this.fps.update();
-    if (typeof this.afterRender === "function") this.afterRender();
+    // === Callbacks (unchanged) ===
+    if (this.fps && this.fps.update) this.fps.update()
+    if (typeof this.afterRender === "function") this.afterRender()
   }
+
 
   restart() {
     if (this.scene) {
