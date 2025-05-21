@@ -7,19 +7,11 @@ var fps = null
 
 const GALLERY = [
   "birds",
-  "fog",
-  "waves",
-  "clouds",
-  "clouds2",
   "globe",
-  "net",
   "cells",
   // "ripple",
   "trunk",
-  "topology",
-  "dots",
-  "rings",
-  "halo",
+  "dots"
 ]
 
 var debounce = function(func, wait, immediate) {
