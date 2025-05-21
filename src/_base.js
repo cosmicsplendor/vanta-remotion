@@ -132,7 +132,7 @@ VANTA.VantaBase = class VantaBase {
     this.renderer = new THREE.WebGLRenderer({
       alpha: true,
       antialias: true,
-      preserveDrawingBuffer: true  // Ensures canvas isn't cleared between frames
+      preserveDrawingBuffer: false  // Ensures canvas isn't cleared between frames
     });
 
     // Disable automatic rendering and clearing
