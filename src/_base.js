@@ -215,26 +215,17 @@ VANTA.VantaBase = class VantaBase {
     this.prevNow = now
 
     // === Always render ===
+    // In animationLoop or a new dedicated render method:
     if (this.scene && this.camera) {
-      // 🔥 1. Disable autoClear to ensure full control
-      this.renderer.autoClear = false
+      // Set the clear color and alpha
+      this.renderer.setClearColor(this.options.backgroundColor, this.options.backgroundAlpha);
+      // Explicitly clear the color, depth, and stencil buffers
+      this.renderer.clear(true, true, true); // clear color, depth, stencil
 
-      // 🔥 2. Explicitly clear color, depth, and stencil buffers
-      this.renderer.clear(true, true, true)
-
-      // 🔥 3. Update scene
       if (typeof this.onUpdate === "function") {
-        this.onUpdate()
+        this.onUpdate();
       }
-
-      // 🔥 4. Render scene
-      this.renderer.render(this.scene, this.camera)
-
-      // 🔥 5. Flush GPU pipeline to avoid flickering in Remotion
-      this.renderer.getContext().finish()
-
-      // 🔥 6. OPTIONAL: restore clear color if used elsewhere
-      this.renderer.setClearColor(this.options.backgroundColor, this.options.backgroundAlpha)
+      this.renderer.render(this.scene, this.camera);
     }
 
     // === Callbacks (unchanged) ===
