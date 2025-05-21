@@ -181,7 +181,7 @@ VANTA.VantaBase = class VantaBase {
     }
     if (this.renderer) {
       this.renderer.setSize(this.width, this.height)
-      this.renderer.setPixelRatio(window.devicePixelRatio / this.scale)
+      this.renderer.setPixelRatio(1 / this.scale)
     }
     typeof this.onResize === "function" ? this.onResize() : void 0
   }
@@ -214,19 +214,21 @@ VANTA.VantaBase = class VantaBase {
     }
     this.prevNow = now
 
-    // === Always render ===
-    // In animationLoop or a new dedicated render method:
-    if (this.scene && this.camera) {
-      // Set the clear color and alpha
-      this.renderer.setClearColor(this.options.backgroundColor, this.options.backgroundAlpha);
-      // Explicitly clear the color, depth, and stencil buffers
-      this.renderer.clear(true, true, true); // clear color, depth, stencil
+    const bgColor = this.options.backgroundColor; // Or color2Hex(this.options.backgroundColor)
+    const bgAlpha = this.options.backgroundAlpha;
 
-      if (typeof this.onUpdate === "function") {
-        this.onUpdate();
-      }
-      this.renderer.render(this.scene, this.camera);
+    this.renderer.setClearColor(bgColor, bgAlpha);
+    // Clear the color, depth, and stencil buffers.
+    this.renderer.clear(true, true, true);
+
+    // 3. Call the effect's update logic
+    // This is where object positions, visibility, etc., are updated based on the new time.
+    if (typeof this.onUpdate === "function") {
+      this.onUpdate();
     }
+
+    // 4. Render the scene with the updated objects
+    this.renderer.render(this.scene, this.camera);
 
     // === Callbacks (unchanged) ===
     if (this.fps && this.fps.update) this.fps.update()
