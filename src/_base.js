@@ -1,4 +1,4 @@
-import { q, color2Hex, clearThree} from './helpers.js'
+import { q, color2Hex, clearThree } from './helpers.js'
 
 const win = typeof window == 'object'
 let THREE = (win && window.THREE) || {}
@@ -7,9 +7,9 @@ const VANTA = (win && window.VANTA) || {}
 VANTA.register = (name, Effect) => {
   return VANTA[name] = (opts) => new Effect(opts)
 }
-export {VANTA}
+export { VANTA }
 
-const error = function() {
+const error = function () {
   Array.prototype.unshift.call(arguments, '[VANTA]')
   return console.error.apply(this, arguments)
 }
@@ -24,9 +24,6 @@ VANTA.VantaBase = class VantaBase {
 
     const defaultOptions = (typeof this.getDefaultOptions === 'function') ? this.getDefaultOptions() : this.defaultOptions
     this.options = Object.assign({
-      mouseControls: true,
-      touchControls: true,
-      gyroControls: false,
       minHeight: 200,
       minWidth: 200,
       scale: 1,
@@ -34,7 +31,7 @@ VANTA.VantaBase = class VantaBase {
     }, defaultOptions)
 
     if (userOptions instanceof HTMLElement || typeof userOptions === 'string') {
-      userOptions = {el: userOptions}
+      userOptions = { el: userOptions }
     }
     Object.assign(this.options, userOptions)
 
@@ -74,14 +71,14 @@ VANTA.VantaBase = class VantaBase {
     }
 
     this.resize()
-    this.animationLoop()
+    this.animationLoop(0)
 
     const ad = window.addEventListener
     ad('resize', this.resize)
     window.requestAnimationFrame(this.resize) // Force a resize after the first frame
   }
 
-  setOptions(userOptions={}){
+  setOptions(userOptions = {}) {
     Object.assign(this.options, userOptions)
   }
 
@@ -112,7 +109,7 @@ VANTA.VantaBase = class VantaBase {
     }
   }
 
-  applyCanvasStyles(canvasEl, opts={}){
+  applyCanvasStyles(canvasEl, opts = {}) {
     Object.assign(canvasEl.style, {
       position: 'absolute',
       zIndex: 0,
@@ -134,8 +131,13 @@ VANTA.VantaBase = class VantaBase {
     }
     this.renderer = new THREE.WebGLRenderer({
       alpha: true,
-      antialias: true
-    })
+      antialias: true,
+      preserveDrawingBuffer: true  // Ensures canvas isn't cleared between frames
+    });
+
+    // Disable automatic rendering and clearing
+    this.renderer.autoClear = false;
+
     this.el.appendChild(this.renderer.domElement)
     this.applyCanvasStyles(this.renderer.domElement)
     if (isNaN(this.options.backgroundAlpha)) {
@@ -197,44 +199,48 @@ VANTA.VantaBase = class VantaBase {
   }
 
   animationLoop(t) {
-    this.t || (this.t = 0)
-    this.t2 || (this.t2 = 0)
+    // Initialize time tracking if needed
+    this.t || (this.t = 0);
+    this.t2 || (this.t2 = 0);
 
-    const now = t
+    // For Remotion: Use the passed time directly (t is in seconds)
+    const now = t * 1000; // Convert to milliseconds to match original logic
+
     if (this.prevNow) {
-      let elapsedTime = (now-this.prevNow) / (1000/60)
-      elapsedTime = Math.max(0.2, Math.min(elapsedTime, 5))
-      this.t += elapsedTime
+      // Calculate elapsed time with frame-rate independence
+      let elapsedTime = (now - this.prevNow) / (1000 / 60);
+      elapsedTime = Math.max(0.2, Math.min(elapsedTime, 5));
+      this.t += elapsedTime;
 
-      this.t2 += (this.options.speed || 1) * elapsedTime
+      // Update shader time (convert to seconds)
+      this.t2 += (this.options.speed || 1) * elapsedTime;
       if (this.uniforms) {
-        this.uniforms.iTime.value = this.t2 * 0.016667 // iTime is in seconds
+        this.uniforms.iTime.value = this.t2 * 0.016667; // iTime is in seconds
       }
     }
-    this.prevNow = now
+    this.prevNow = now;
 
+    // Always render in Remotion (skip isOnScreen check)
+    if (this.scene && this.camera) {
+      // Clear only what we need (color and depth buffers)
+      this.renderer.clearColor();
+      this.renderer.clearDepth();
 
-    if (this.options.mouseEase) {
-      this.mouseEaseX = this.mouseEaseX || this.mouseX || 0
-      this.mouseEaseY = this.mouseEaseY || this.mouseY || 0
-      if (Math.abs(this.mouseEaseX-this.mouseX) + Math.abs(this.mouseEaseY-this.mouseY) > 0.1) {
-        this.mouseEaseX += (this.mouseX - this.mouseEaseX) * 0.05
-        this.mouseEaseY += (this.mouseY - this.mouseEaseY) * 0.05
-        this.triggerMouseMove(this.mouseEaseX, this.mouseEaseY)
-      }
-    }
-
-    if (this.isOnScreen() || this.options.forceAnimate) {
+      // Update scene
       if (typeof this.onUpdate === "function") {
-        this.onUpdate()
+        this.onUpdate();
       }
-      if (this.scene && this.camera) {
-        this.renderer.render(this.scene, this.camera)
-        this.renderer.setClearColor(this.options.backgroundColor, this.options.backgroundAlpha)
-      }
-      if (this.fps && this.fps.update) this.fps.update()
-      if (typeof this.afterRender === "function") this.afterRender()
+
+      // Render frame
+      this.renderer.render(this.scene, this.camera);
+
+      // Set clear color for next frame
+      this.renderer.setClearColor(this.options.backgroundColor, this.options.backgroundAlpha);
     }
+
+    // Optional callbacks
+    if (this.fps && this.fps.update) this.fps.update();
+    if (typeof this.afterRender === "function") this.afterRender();
   }
 
   restart() {
