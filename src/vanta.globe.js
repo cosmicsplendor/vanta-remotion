@@ -191,10 +191,6 @@ class Effect extends VantaBase {
     const color2 = new THREE.Color(this.options.color2)
     const diffColor = color.clone().sub(bgColor)
 
-    if (this.rayCaster) {
-      this.rayCaster.setFromCamera(new THREE.Vector2(this.rcMouseX,this.rcMouseY), this.camera)
-    }
-
     if (this.linesMesh2) {
       this.linesMesh2.rotation.z += 0.002
       this.linesMesh2.rotation.x += 0.0008
@@ -208,12 +204,7 @@ class Effect extends VantaBase {
     for (let i = 0; i < this.points.length; i++) {
       let dist, distToMouse
       const p = this.points[i]
-
-      if (this.rayCaster) {
-        distToMouse = this.rayCaster.ray.distanceToPoint(p.position)
-      } else {
-        distToMouse = 1000
-      }
+      distToMouse = 1000
       const distClamp = distToMouse.clamp(5,15)
       p.scale.z = ((15 - distClamp) * 0.25).clamp(1, 100)
       p.scale.x = p.scale.y = p.scale.z
@@ -231,8 +222,9 @@ class Effect extends VantaBase {
         dist = Math.sqrt( (dx * dx) + (dy * dy) + (dz * dz) )
         if (dist < this.options.maxDistance) {
           let lineColor
-          let alpha = (( 1.0 - (dist / this.options.maxDistance) ) * 2)
-          alpha = alpha.clamp(0, 1)
+          // let alpha = (( 1.0 - (dist / this.options.maxDistance) ) * 2)
+          // alpha = alpha.clamp(0, 1)
+          const alpha = 1
           if (this.blending === 'additive') {
             lineColor = new THREE.Color(0x000000).lerp(diffColor, alpha)
           } else {
